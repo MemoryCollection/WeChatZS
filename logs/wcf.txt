@@ -1395,3 +1395,5 @@
 [2025-01-27 12:59:52.429] [info] [WCF] [spy.cpp::35::InitSpy] WeChat version: 3.9.10.27
 [2025-01-27 12:59:52.438] [info] [WCF] [rpc_server.cpp::1084::RpcStopServer] Server stoped.
 [2025-01-27 12:59:52.438] [error] [WCF] [rpc_server.cpp::1021::RunServer] cmdSock-nng_recv error: Object closed
+[2025-01-27 18:52:54.537] [info] [WCF] [spy.cpp::35::InitSpy] WeChat version: 3.9.10.27
+[2025-01-27 18:52:54.538] [info] [WCF] [rpc_server.cpp::1010::RunServer] CMD Server listening on tcp://0.0.0.0:10086
