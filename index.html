@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信助手</title>
+    <style>
+        button:disabled {
+            background-color: gray;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>微信助手</h1>
+
+    <!-- 微信进程选择 -->
+    <h2>微信进程选择</h2>
+    <div id="process_selection"></div>
+    <button id="inject_button" onclick="injectWcf()">注入</button>
+
+    <!-- 已注入微信选择 -->
+    <h2>已注入微信选择</h2>
+    <select id="injected_wx_select" onchange="selectWx()"></select>
+
+    <!-- 群发功能 -->
+    <h2>群发功能</h2>
+    <div id="group_sending_config"></div>
+    <button id="group_sending_button" onclick="sendGroupMessages()">开始群发</button>
+
+    <!-- 邀请加群功能 -->
+    <h2>邀请加群功能</h2>
+    <label for="max_invites">最大邀请数:</label>
+    <input type="number" id="max_invites" value="10"><br>
+    <label for="current_wxid">当前微信 ID:</label>
+    <input type="text" id="current_wxid"><br>
+    <label for="invite_name">邀请名称:</label>
+    <input type="text" id="invite_name" value="laqun-0001"><br>
+    <button id="invite_button" onclick="inviteFriendsToGroup()">开始邀请</button>
+
+    <!-- 运行状态模块 -->
+    <h2>运行状态</h2>
+    <p id="connection_status">前后端联通情况: 未知</p>
+    <p id="thread_status">后台线程情况: 未知</p>
+    <p id="wx_task_status">已注入微信任务情况: 未知</p>
+
+    <!-- 日志模块 -->
+    <h2>日志</h2>
+    <div id="log_display"></div>
+
+    <script>
+        let historyLogs = {};
+
+        function fetchHistoryLogs() {
+            fetch('/history_logs')
+               .then(response => response.json())
+               .then(data => {
+                    historyLogs = data;
+                    updateUI();
+                })
+               .catch(error => console.error('获取 history_logs 失败:', error));
+        }
+
+        function updateUI() {
+            // 微信进程选择
+            const processSelection = document.getElementById('process_selection');
+            processSelection.innerHTML = '';
+            if (historyLogs.process_count) {
+                for (let i = 0; i < historyLogs.process_count; i++) {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `process_${i}`;
+                    checkbox.value = i;
+                    const label = document.createElement('label');
+                    label.htmlFor = `process_${i}`;
+                    label.textContent = `进程 ${i}`;
+                    processSelection.appendChild(checkbox);
+                    processSelection.appendChild(label);
+                    processSelection.appendChild(document.createElement('br'));
+                }
+            }
+
+            // 已注入微信选择
+            const injectedWxSelect = document.getElementById('injected_wx_select');
+            injectedWxSelect.innerHTML = '';
+            if (historyLogs.injected_wx) {
+                for (const index in historyLogs.injected_wx) {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `微信: ${historyLogs.injected_wx[index].name} (${historyLogs.injected_wx[index].wxid})`;
+                    injectedWxSelect.appendChild(option);
+                }
+            }
+
+            // 群发功能配置
+            const groupSendingConfig = document.getElementById('group_sending_config');
+            groupSendingConfig.innerHTML = '';
+            if (historyLogs.pz_data) {
+                for (const key in historyLogs.pz_data) {
+                    const label = document.createElement('label');
+                    label.textContent = `${key}: `;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = `pz_data_${key}`;
+                    input.value = historyLogs.pz_data[key];
+                    input.addEventListener('change', () => updatePzData());
+                    groupSendingConfig.appendChild(label);
+                    groupSendingConfig.appendChild(input);
+                    groupSendingConfig.appendChild(document.createElement('br'));
+                }
+            }
+
+            // 群发按钮状态
+            const groupSendingButton = document.getElementById('group_sending_button');
+            groupSendingButton.disabled = historyLogs.renwu_qunfa;
+
+            // 邀请按钮状态
+            const inviteButton = document.getElementById('invite_button');
+            inviteButton.disabled = historyLogs.renwu_yaoqing;
+
+            // 运行状态模块
+            const connectionStatus = document.getElementById('connection_status');
+            connectionStatus.textContent = '前后端联通情况: 已联通';
+            const threadStatus = document.getElementById('thread_status');
+            threadStatus.textContent = `后台线程情况: ${(historyLogs.threads || []).length} 个线程`;
+            const wxTaskStatus = document.getElementById('wx_task_status');
+            wxTaskStatus.textContent = `已注入微信任务情况: ${(historyLogs.wx_tasks || []).join(', ')}`;
+
+            // 日志模块
+            const logDisplay = document.getElementById('log_display');
+            logDisplay.innerHTML = '';
+            if (historyLogs.logs) {
+                for (const log of historyLogs.logs) {
+                    const p = document.createElement('p');
+                    p.textContent = log;
+                    logDisplay.appendChild(p);
+                }
+            }
+        }
+
+        function injectWcf() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const indexes = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+            fetch('/inject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ indexes })
+            })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.status === 'success') {
+                        fetchHistoryLogs();
+                    }
+                })
+               .catch(error => console.error('注入失败:', error));
+        }
+
+        function selectWx() {
+            const select = document.getElementById('injected_wx_select');
+            const index = select.value;
+            fetch('/select_wx', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ index })
+            })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.status === 'success') {
+                        fetchHistoryLogs();
+                    }
+                })
+               .catch(error => console.error('选择微信失败:', error));
+        }
+
+        function sendGroupMessages() {
+            fetch('/send_group_messages', {
+                method: 'POST'
+            })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.status === 'success') {
+                        fetchHistoryLogs();
+                    }
+                })
+               .catch(error => console.error('群发消息失败:', error));
+        }
+
+        function inviteFriendsToGroup() {
+            const maxInvites = parseInt(document.getElementById('max_invites').value);
+            const currentWxid = document.getElementById('current_wxid').value;
+            const inviteName = document.getElementById('invite_name').value;
+            fetch('/invite_friends_to_group', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ max_invites: maxInvites, current_wxid: currentWxid, invite_name: inviteName })
+            })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.status === 'success') {
+                        fetchHistoryLogs();
+                    }
+                })
+               .catch(error => console.error('邀请好友失败:', error));
+        }
+
+        function updatePzData() {
+            const pzData = {};
+            const inputs = document.querySelectorAll('[id^="pz_data_"]');
+            inputs.forEach(input => {
+                const key = input.id.replace('pz_data_', '');
+                pzData[key] = input.value;
+            });
+            fetch('/update_pz_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(pzData)
+            })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.status === 'success') {
+                        fetchHistoryLogs();
+                    }
+                })
+               .catch(error => console.error('更新配置失败:', error));
+        }
+
+        // 每 2 秒获取一次 history_logs
+        setInterval(fetchHistoryLogs, 2000);
+        // 初始获取
+        fetchHistoryLogs();
+    </script>
+</body>
+
+</html>
