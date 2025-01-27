@@ -1,0 +1,5 @@
+PyYAML
+pynng
+requests
+google-cloud
+protobuf

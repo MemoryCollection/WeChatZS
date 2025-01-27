@@ -3,7 +3,7 @@ from wcferry import sendlog
 
 db_path = "data/data.db"  # 数据库路径
 
-def categorize_contact(contact, qcys, ContactLabel, Contact_ids, sql_biao):
+def categorize_contact(contact, qcys, ContactLabel, Contact_ids, current_wxid):
     """根据联系人的信息将其分类。"""
     if 'wxid' not in contact:
         return None, None, None, None, None, None, []
@@ -20,7 +20,7 @@ def categorize_contact(contact, qcys, ContactLabel, Contact_ids, sql_biao):
         chatroom_members = qcys.get(wxid, [])
         wxidlist = "^".join(chatroom_members)
         member_count = len(chatroom_members)
-        if sql_biao not in wxidlist:
+        if current_wxid not in wxidlist:
             category = '已删'
         return wxid, remark, name, category, member_count, wxidlist, []
 
@@ -38,7 +38,7 @@ def categorize_contact(contact, qcys, ContactLabel, Contact_ids, sql_biao):
 
     return None, None, None, None, None, None, []
 
-def ensure_columns_exist(cursor, sql_biao):
+def ensure_columns_exist(cursor, current_wxid):
     """确保表中包含所需的列。"""
     required_columns = {
         "wxid": "TEXT NOT NULL UNIQUE",
@@ -54,22 +54,22 @@ def ensure_columns_exist(cursor, sql_biao):
     }
 
     # 获取表的现有列信息
-    cursor.execute(f"PRAGMA table_info({sql_biao})")
+    cursor.execute(f"PRAGMA table_info({current_wxid})")
     existing_columns = {row[1]: row[2] for row in cursor.fetchall()}
 
     # 添加缺失的列
     for column, column_type in required_columns.items():
         if column not in existing_columns:
             try:
-                cursor.execute(f"ALTER TABLE {sql_biao} ADD COLUMN {column} {column_type}")
+                cursor.execute(f"ALTER TABLE {current_wxid} ADD COLUMN {column} {column_type}")
             except sqlite3.Error as e:
                 sendlog.run(f"列创建错误: {e}")
                 raise
 
-def categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact_ids, sql_biao):
+def categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact_ids, current_wxid):
     """批量更新或插入联系人信息。"""
     for contact in contacts:
-        wxid, remark, name, category, member_count, wxidlist, label_names = categorize_contact(contact, qcys, ContactLabel, Contact_ids, sql_biao)
+        wxid, remark, name, category, member_count, wxidlist, label_names = categorize_contact(contact, qcys, ContactLabel, Contact_ids, current_wxid)
         if wxid is None:
             continue
 
@@ -78,19 +78,19 @@ def categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact
 
         try:
             # 检查联系人是否已存在
-            cursor.execute(f"SELECT 1 FROM {sql_biao} WHERE wxid = ?", (wxid,))
+            cursor.execute(f"SELECT 1 FROM {current_wxid} WHERE wxid = ?", (wxid,))
             exists = cursor.fetchone() is not None
 
             # 更新或插入联系人信息
             if exists:
                 cursor.execute(f"""
-                    UPDATE {sql_biao}
+                    UPDATE {current_wxid}
                     SET name = ?, remark = ?, class = ?, ContactLabel = ?, MemberNum = ?, wxidList = ?
                     WHERE wxid = ?
                 """, (name, remark, category, label_names_str, member_count, wxidlist, wxid))
             else:
                 cursor.execute(f"""
-                    INSERT INTO {sql_biao} (wxid, name, remark, class, ContactLabel, nUnReadCount, nTime, MemberNum, wxidList)
+                    INSERT INTO {current_wxid} (wxid, name, remark, class, ContactLabel, nUnReadCount, nTime, MemberNum, wxidList)
                     VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?)
                 """, (wxid, name, remark, category, label_names_str, member_count, wxidlist))
         except sqlite3.Error as e:
@@ -100,7 +100,7 @@ def categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact
             sendlog.run(f"其他错误: {e}")
             raise
 
-def up(wcf, sql_biao, current_name):
+def up(wcf, current_wxid, current_name):
     """获取联系人列表并分类，返回字典，键为分类名，值为分类内联系人的列表。"""
     categorized_contacts = {'未分': [], '旅游': [], '工商': [], '好友': [], '已删': []}
 
@@ -110,7 +110,7 @@ def up(wcf, sql_biao, current_name):
 
         # 创建表（如果不存在）
         cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {sql_biao} (
+            CREATE TABLE IF NOT EXISTS {current_wxid} (
                 "wxid" TEXT NOT NULL UNIQUE,
                 "name" TEXT NOT NULL,
                 "remark" TEXT,
@@ -126,7 +126,7 @@ def up(wcf, sql_biao, current_name):
         """)
 
         # 确保列存在
-        ensure_columns_exist(cursor, sql_biao)
+        ensure_columns_exist(cursor, current_wxid)
 
         # 获取联系人和相关信息
         wcf.get_contacts()
@@ -136,24 +136,24 @@ def up(wcf, sql_biao, current_name):
         Contact_ids = {item['UserName']: {'LabelIDList': item['LabelIDList'], 'DelFlag': item['DelFlag']} for item in wcf.query_sql("MicroMsg.db", "SELECT UserName, LabelIDList,DelFlag FROM Contact")} # 标签id 和删除标志
 
         # 获取已存在的联系人 wxid
-        cursor.execute(f"SELECT wxid FROM {sql_biao}")
+        cursor.execute(f"SELECT wxid FROM {current_wxid}")
         existing_wxids = {row[0] for row in cursor.fetchall()}
 
         # 更新或插入联系人信息
-        categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact_ids, sql_biao)
+        categorize_and_update_contacts(contacts, cursor, qcys, ContactLabel, Contact_ids, current_wxid)
         conn.commit()
 
         # 删除本地数据库中没有在微信中出现的联系人
         current_wxids = {contact['wxid'] for contact in contacts}
         for wxid in existing_wxids - current_wxids:
-            cursor.execute(f"SELECT name FROM {sql_biao} WHERE wxid = ?", (wxid,))
+            cursor.execute(f"SELECT name FROM {current_wxid} WHERE wxid = ?", (wxid,))
             name = cursor.fetchone()[0]
             sendlog.run(f"删除 {wxid}, {name}")
-            cursor.execute(f"DELETE FROM {sql_biao} WHERE wxid = ?", (wxid,))
+            cursor.execute(f"DELETE FROM {current_wxid} WHERE wxid = ?", (wxid,))
         conn.commit()
 
         # 查询分类联系人并整理
-        cursor.execute(f"SELECT wxid, name, class FROM {sql_biao}")
+        cursor.execute(f"SELECT wxid, name, class FROM {current_wxid}")
         rows = cursor.fetchall()
 
         for wxid, name, category in rows:

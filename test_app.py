@@ -1,6 +1,24 @@
-from wcferry import Wcf, enumWeChatProcess,AB
+from wcferry import Wcf, enumWeChatProcess, AB, mass_sending, AddGroup, sendlog
+import yaml
 
+def read_yaml(config_path = "data/config.yml"):
+    """读取 YAML 配置文件"""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as file:
+            return yaml.safe_load(file)
+    except yaml.YAMLError as e:
+        logging.error(f"Error reading config: {e}")
+        return {}
 
+def write_yaml_config(config_data, file_path = "data/config.yml"):
+    """写入 YAML 配置文件"""
+    try:
+        with open(file_path, 'w', encoding='utf-8') as file:
+            yaml.dump(config_data, file, allow_unicode=True, sort_keys=False)
+        sendlog.run(f"YAML 文件已成功写入: {file_path}")
+    except Exception as e:
+        sendlog.run(f"写入 YAML 文件时出现错误: {e}")
+        
 def chushihua(nums=[0]):
     """wcf初始化
 
@@ -12,7 +30,7 @@ def chushihua(nums=[0]):
     """
     wcf_instances = {}  # 初始化字典
     count = enumWeChatProcess()  # 获取微信进程数量
-    print(f'WeChat process count: {count}')
+    sendlog.run(f'WeChat process count: {count}')
     port = 10086  # 初始端口号
 
     for index in nums:
@@ -33,7 +51,7 @@ def chushihua(nums=[0]):
             }
         except Exception as e:
             # 记录错误日志
-            logging.error(f"初始化 Wcf 实例时出错 (index: {index}): {e}")
+            sendlog.run(f"初始化 Wcf 实例时出错 (index: {index}): {e}")
             continue  # 继续处理下一个索引
 
     return wcf_instances
@@ -45,11 +63,7 @@ if __name__ == '__main__':
         wcf = wcf_instance["wcf_instance"]
         current_wxid = wcf_instance['user_info']['wxid']
         current_name = wcf_instance['user_info']['name']
-        AB.up(wcf, current_wxid, current_name)
+        AB.up(wcf, current_wxid, current_name) # 更新数据库
+        pz_data = read_yaml("data/config.yml")  # 读取配置文件
+        mass_sending.run(wcf, pz_data, current_wxid)  # 群发
         
-        # shuju = wcf.query_sql("MicroMsg.db", "SELECT UserName, DelFlag FROM Contact")
-        # for i in shuju:
-        #     if i['DelFlag'] != 0:
-        #         print(i['UserName'],i['DelFlag'])
-
-
