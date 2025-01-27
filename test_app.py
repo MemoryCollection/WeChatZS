@@ -75,6 +75,17 @@ def invite_friends_to_group(wcf, current_wxid, current_name):
     finally:
         renwu_yaoqing = False
 
+@app.route('/add_log', methods=['POST'])
+def add_log():
+    """添加日志"""
+    log_message = request.json.get('log_message')
+    if not log_message:
+        return jsonify({'status': 'failure', 'error': 'Log message is required'}), 400
+    formatted_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    full_message = f"{formatted_time}: {log_message}"
+    history_logs.append(full_message)
+    return jsonify({'status': 'success', 'log': full_message})
+    
 if __name__ == '__main__':
     count = enumWeChatProcess()
     sendlog.run(f'当前已启动微信进程数量: {count}')
