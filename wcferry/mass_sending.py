@@ -103,7 +103,7 @@ def process_group_messages(class_name, wcf, pz_data, qf_num, current_wxid):
         nTime = int(time.time())
 
         # 判断是否需要发送消息
-        if (nUnReadCount - local_nUnReadCount) > pz_data['群发配置']['消息间隔'] or (nTime - local_nTime) > (pz_data['群发配置']['消息天数'] * 24 * 3600):
+        if (nUnReadCount - local_nUnReadCount) > pz_data['群发配置']['未读消息'] or (nTime - local_nTime) > (pz_data['群发配置']['消息天数'] * 24 * 3600):
             message = random.choice(pz_data['群发配置']['话术配置'][class_name]) + get_random_emojis()
 
             if send_message(wxid, message, wcf):
@@ -119,6 +119,7 @@ def process_group_messages(class_name, wcf, pz_data, qf_num, current_wxid):
     return qf_num
 
 def run(wcf, pz_data, current_wxid):
+    """群发消息。"""
     qf_num = 0
     qunfa_list = pz_data['群发配置']['群发群组']
     if not qunfa_list:

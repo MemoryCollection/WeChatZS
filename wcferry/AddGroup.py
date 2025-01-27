@@ -4,13 +4,13 @@ import sqlite3
 import json
 from wcferry import sendlog
 
-def up(wcf, class_name, current_wxid, invite_name="laqun-0001", max_invites=10):
+def run(wcf, max_invites=10, current_wxid = "wxid_mouekuvkxa3v22", class_name = "未分", invite_name="laqun-0001"):
     """邀请目标加入群聊：laqun-0001。
         wcf (Wcf): Wcf 对象。
         max_invites (int): 最大邀请次数。
         current_wxid (str): 当前登录的微信号。
-        invite_name (str): 被邀请者的备注名称。
         class_name (str): 群分类名称。
+        invite_name (str): 被邀请者的备注名称。
     """
     sendlog.run(f"开始邀请目标加入群聊：{invite_name}, 最大邀请次数：{max_invites}, 群分类：{class_name}。")
 

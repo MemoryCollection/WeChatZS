@@ -3,3 +3,4 @@ pynng
 requests
 google-cloud
 protobuf
+flask
