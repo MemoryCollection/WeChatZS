@@ -23,27 +23,25 @@ def write_yaml_config(config_data, file_path=CONFIG_PATH):
     except Exception as e:
         sendlog.run(f"写入 YAML 文件错误: {e}")
 
-def chushihua(nums):
+def chushihua(index):
     """wcf初始化"""
     wcf_instances = {}
-    port = 10086
-    for index in nums:
-        try:
-            wcf = Wcf(debug=False, block=False, processIndex=index, port=port)
-            port += 10
-            denglujieguo = wcf.get_user_info()
-            wcf_instances[index] = {
-                "wcf_instance": wcf,
-                "user_info": {
-                    "name": denglujieguo.get("name"),
-                    "wxid": denglujieguo.get("wxid"),
-                    "mobile": denglujieguo.get("mobile")
-                }
+    port = 1008
+    try:
+        wcf = Wcf(debug=False, block=False, processIndex=index, port=port)
+        port += 10
+        denglujieguo = wcf.get_user_info()
+        wcf_instances = {
+            "wcf_instance": wcf,
+            "user_info": {
+                "name": denglujieguo.get("name"),
+                "wxid": denglujieguo.get("wxid"),
+                "mobile": denglujieguo.get("mobile")
             }
-            sendlog.run(f"成功初始化 Wcf 实例: index = {index}, wxid = {denglujieguo.get('wxid')}")
-        except Exception as e:
-            sendlog.run(f"初始化 Wcf 实例失败 (index: {index}): {e}")
-            continue
+        }
+        sendlog.run(f"成功初始化 Wcf 实例: index = {index}, wxid = {denglujieguo.get('wxid')}")
+    except Exception as e:
+        sendlog.run(f"初始化 Wcf 实例失败 (index: {index}): {e}")
     return wcf_instances
 
 def update_user_info(wcf, current_wxid, current_name):
@@ -80,10 +78,4 @@ def invite_friends_to_group(wcf, current_wxid, current_name):
 if __name__ == '__main__':
     count = enumWeChatProcess()
     sendlog.run(f'当前已启动微信进程数量: {count}')
-    yonghu_id = list(range(count))
-    wcf_instances = chushihua(yonghu_id)
-    for index, wcf_instance in wcf_instances.items():
-        wcf = wcf_instance["wcf_instance"]
-        current_wxid = wcf_instance['user_info']['wxid']
-        current_name = wcf_instance['user_info']['name']
-        current_mobile = wcf_instance['user_info']['mobile']
+

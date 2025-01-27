@@ -3,227 +3,183 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale = 1.0">
-    <title>群发管理界面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微信任务管理</title>
     <style>
-        /* 全局样式 */
         body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: #f5f7fa;
-            margin: 0;
-            padding: 0;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
         }
 
-        /* 主容器样式 */
-       .main-container {
+        .container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            width: 90%;
-            max-width: 1200px;
-            padding: 24px;
+            grid-template-columns: 3fr 1fr;
+            grid-gap: 20px;
+            padding: 20px;
         }
 
-        /* 卡片样式 */
-       .card {
-            background-color: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            padding: 32px;
-            animation: fadeInUp 0.6s ease-out;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .settings {
+            display: grid;
+            grid-template-rows: auto auto;
+            grid-gap: 10px;
         }
 
-       .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-
-        /* 标题样式 */
-       .card h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #e0e6ed;
-            padding-bottom: 12px;
-        }
-
-        /* 统一标签和输入框样式 */
-       .form-element {
-            margin-bottom: 16px;
-        }
-
-       .form-element label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: #555;
-        }
-
-       .form-element input[type="number"],
-       .form-element input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #dfe3e8;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            transition: border-color 0.3s ease;
-            background-color: #f9fafb;
-        }
-
-       .form-element input[type="number"]:focus,
-       .form-element input[type="text"]:focus {
-            border-color: #73a6ff;
-            outline: none;
-            background-color: #fff;
-        }
-
-        /* 按钮样式 */
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: background-color 0.3s ease;
-            margin-top: 8px;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        /* 执行历史列表样式 */
-       .history-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-       .history-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #f1f3f5;
-            font-size: 0.9rem;
-        }
-
-       .history-list li:last-child {
-            border-bottom: none;
-        }
-
-        /* 服务器状态样式 */
-       .server-status p {
-            margin: 8px 0;
-            font-size: 0.9rem;
-        }
-
-        /* 群发设置一行样式 */
-       .group-send-settings {
+        .settings-row {
             display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
+            justify-content: space-between;
+            align-items: center;
         }
 
-       .group-send-settings .form-element {
-            flex: 1;
+        .select-list {
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 动画关键帧 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .history {
+            grid-row: 2 / 4;
         }
 
-        /* 响应式布局 */
-        @media (max-width: 768px) {
-           .main-container {
-                grid-template-columns: 1fr;
-            }
+        .status {
+            display: flex;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 5px 10px;
         }
     </style>
 </head>
 
 <body>
-    <div class="main-container">
-        <!-- 左侧卡片 -->
-        <div class="card">
-            <h2>群发设置</h2>
-            <div class="group-send-settings">
-                <div class="form-element">
-                    <label for="message-interval">消息间隔</label>
-                    <input type="number" id="message-interval" min="1" value="3">
+    <div class="container">
+        <div class="settings">
+            <div class="settings-row">
+                <div>
+                    邀请数量：<input type="number" id="invite_count" value="10">
+                    群聊分组：<select id="group_class">
+                        <option value="option1">选项1</option>
+                        <option value="option2">选项2</option>
+                    </select>
+                    邀请目标：<input type="text" id="invite_target" value="laqun">
+                    <button id="invite_button">邀请按钮</button>
                 </div>
-                <div class="form-element">
-                    <input type="number" id="message-interval-2" min="1" value="5">
-                </div>
-                <div class="form-element">
-                    <label for="interval-days">间隔天数</label>
-                    <input type="number" id="interval-days">
-                </div>
-                <div class="form-element">
-                    <label for="unread-messages">未读消息</label>
-                    <input type="text" id="unread-messages">
-                </div>
-                <div class="form-element">
-                    <label for="groups">群组</label>
-                    <input type="text" id="groups" value="旅游, 工商, 未分">
-                </div>
-                <div class="form-element">
-                    <label for="loop">循环</label>
-                    <input type="text" id="loop">
+                <div class="select-list">
+                    <select id="user_select" multiple>
+                        <!-- 用户选择列表将动态填充 -->
+                    </select>
+                    <button id="inject_button">注入按钮</button>
                 </div>
             </div>
-            <button>开始</button>
-
-            <h2>邀请设置</h2>
-            <div class="form-element">
-                <label for="invite-target">邀请目标</label>
-                <input type="text" id="invite-target">
+            <div class="settings-row">
+                <div>
+                    随机秒：<input type="text" id="random_seconds" value="3-5">
+                    天数：<input type="number" id="days" value="2">
+                    未读消息：<input type="number" id="unread_messages" value="50">
+                    群发群组：<select id="group_names" multiple>
+                        <option value="旅游">旅游</option>
+                        <option value="工商">工商</option>
+                        <option value="未分">未分</option>
+                    </select>
+                    循环时间：<input type="text" id="cycle_time" value="3小时">
+                    <button id="send_group_button">开始按钮</button>
+                </div>
+                <div class="select-list">
+                    <select id="user_info_select" multiple>
+                        <!-- 用户信息选择列表将动态填充 -->
+                    </select>
+                </div>
             </div>
-            <div class="form-element">
-                <label for="invite-number">邀请数量</label>
-                <input type="number" id="invite-number">
-            </div>
-            <div class="form-element">
-                <label for="invite-groups">群组</label>
-                <input type="text" id="invite-groups" value="旅游, 工商, 未分">
-            </div>
-            <button>开始</button>
-
-            <h2>执行历史</h2>
-            <ul class="history-list">
-                <li>执行历史信息1</li>
-                <li>执行历史信息2</li>
-                <li>执行历史信息3</li>
-            </ul>
         </div>
-        <!-- 右侧卡片 -->
-        <div class="card">
-            <h2>当前账户</h2>
-            <button id="inject-button">注入按钮</button>
-            <button id="account1">账号1</button>
-            <button id="account2">账号2</button>
-
-            <h2>服务器状态</h2>
-            <p>前后端链接状态: 正常</p>
-            <p>线程数: 12</p>
-            <p>当前执行任务: 用户A正在邀请好友</p>
+        <div class="status">
+            <h3>服务器状态</h3>
+            <p>前后端链接状态: <span id="connection_status">未连接</span></p>
+            <p>线程数: <span id="thread_count">0</span></p>
+            <p>那个用户在执行什么任务: <span id="task_status">无</span></p>
+        </div>
+        <div class="history">
+            <h3>执行历史</h3>
+            <div id="history_info">
+                <!-- 执行历史信息将动态填充 -->
+            </div>
         </div>
     </div>
+
+    <script>
+        const count = {{ count }};
+        const userSelect = document.getElementById('user_select');
+        userSelect.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i;
+            userSelect.appendChild(option);
+        }
+
+        document.getElementById('inject_button').addEventListener('click', function () {
+            const selectedOptions = Array.from(userSelect.selectedOptions).map(option => parseInt(option.value));
+            fetch('/init_wcf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ nums: selectedOptions })
+            })
+           .then(response => response.json())
+           .then(data => {
+                const userInfoSelect = document.getElementById('user_info_select');
+                userInfoSelect.innerHTML = '';
+                data.forEach(info => {
+                    const option = document.createElement('option');
+                    option.value = info.index;
+                    option.textContent = `${info.name} - ${info.mobile} - ${info.wxid}`;
+                    userInfoSelect.appendChild(option);
+                });
+            });
+        });
+
+        document.getElementById('send_group_button').addEventListener('click', function () {
+            const randomSeconds = document.getElementById('random_seconds').value;
+            const days = document.getElementById('days').value;
+            const unreadMessages = document.getElementById('unread_messages').value;
+            const groupNames = Array.from(document.getElementById('group_names').selectedOptions).map(option => option.value);
+            fetch('/send_group_messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    random_seconds: randomSeconds,
+                    days: days,
+                    unread_messages: unreadMessages,
+                    group_names: groupNames
+                })
+            })
+           .then(response => response.json())
+           .then(data => {
+                console.log(data);
+            });
+        });
+
+        document.getElementById('invite_button').addEventListener('click', function () {
+            const inviteCount = document.getElementById('invite_count').value;
+            const groupClass = document.getElementById('group_class').value;
+            const inviteTarget = document.getElementById('invite_target').value;
+            fetch('/invite_friends_to_group', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    invite_count: inviteCount,
+                    group_class: groupClass,
+                    invite_target: inviteTarget
+                })
+            })
+           .then(response => response.json())
+           .then(data => {
+                console.log(data);
+            });
+        });
+    </script>
 </body>
 
 </html>
